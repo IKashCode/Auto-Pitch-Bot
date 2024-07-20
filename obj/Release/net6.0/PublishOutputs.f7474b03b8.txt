@@ -1,0 +1,7 @@
+C:\Users\79381\Desktop\NotLoveBot\bin\Release\net6.0\publish\NotLoveBot.exe
+C:\Users\79381\Desktop\NotLoveBot\bin\Release\net6.0\publish\NotLoveBot.dll
+C:\Users\79381\Desktop\NotLoveBot\bin\Release\net6.0\publish\NotLoveBot.deps.json
+C:\Users\79381\Desktop\NotLoveBot\bin\Release\net6.0\publish\NotLoveBot.runtimeconfig.json
+C:\Users\79381\Desktop\NotLoveBot\bin\Release\net6.0\publish\NotLoveBot.pdb
+C:\Users\79381\Desktop\NotLoveBot\bin\Release\net6.0\publish\Newtonsoft.Json.dll
+C:\Users\79381\Desktop\NotLoveBot\bin\Release\net6.0\publish\Telegram.Bot.dll

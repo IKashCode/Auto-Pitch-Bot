@@ -1,42 +1,64 @@
 using System;
-using Telegram.Bot;
-using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
+using System.Collections.Concurrent;
+using NotLoveBot.BotController;
+using NotLoveBot.DataBaseProcess;
 using NotLoveBot.Program;
+using Telegram.Bot;
 using Telegram.Bot.Args;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace NotLoveBot.AdministrationPanelController
 {
     public class AdministratorMenu
     {
-        // Переменные, которые отвечают за работу отправки и проверки.
-        public static bool EnabledMessages = true, EnabledCheckMessages = true;
-        
-        // Переменная, которая позволяет хранить индивидуальные обработчики событий каждого пользователя.
-        private static Dictionary<long, EventHandler<CallbackQueryEventArgs>> usersCallbacks = new Dictionary<long, EventHandler<CallbackQueryEventArgs>>();
+        // Класс для управления сообщениями с меню.
+        private static KeyboardMessagesController _keyboardMessagesController = new KeyboardMessagesController();
 
-        public async Task GetAdministratorMenu(TelegramBotClient telegramBotClient, Message message, Message editMessage, string administratorStatus)
+        // Класс для работы с базой данных.
+        private static SetDataProcessing _setDataProcessing = new SetDataProcessing();
+
+        // Список активных администраторов в паенеле.
+        public static ConcurrentDictionary<string, List<string>> ActiveAdministratorsId = new ConcurrentDictionary<string, List<string>>();
+
+        // Переменная, которая позволяет хранить индивидуальные обработчики событий каждого пользователя.
+        private static Dictionary<long, EventHandler<CallbackQueryEventArgs>> _usersCallbacks = new Dictionary<long, EventHandler<CallbackQueryEventArgs>>();
+
+        public async Task GetAdministratorMenu(TelegramBotClient telegramBotClient, Message message, Message editMessage, string administratorStatus, string botName)
         {
             try
             {
             // Меню для администратора.
             InlineKeyboardMarkup adminInlineKeyboardMarkup = new InlineKeyboardMarkup(new[] {
-                new[] { InlineKeyboardButton.WithCallbackData("📩 Пересылка") },
-                new[] { InlineKeyboardButton.WithCallbackData("✅ Проверка") },
-                new[] { InlineKeyboardButton.WithCallbackData("📋 Список отправителей") },
-                new[] { InlineKeyboardButton.WithCallbackData("🚪 Выйти") }
+                new[]
+                {
+                    InlineKeyboardButton.WithCallbackData("✅ Фильтр ссылок"),
+                    InlineKeyboardButton.WithCallbackData("⏱️ Тайминг")
+                },
+                new[] { InlineKeyboardButton.WithCallbackData("📋 Отправители") },
+                new[] { InlineKeyboardButton.WithCallbackData("← Назад") }
             });
 
             // Другой вид клавиатуры для главного администратора (владельца).
             if (administratorStatus == "owner")
             {
                 adminInlineKeyboardMarkup = new InlineKeyboardMarkup(new[] {
-                    new[] { InlineKeyboardButton.WithCallbackData("📩 Пересылка") },
-                    new[] { InlineKeyboardButton.WithCallbackData("✅ Проверка") },
-                    new[] { InlineKeyboardButton.WithCallbackData("📋 Список отправителей") },
-                    new[] { InlineKeyboardButton.WithCallbackData("📜 Список модераторов") },
-                    new[] { InlineKeyboardButton.WithCallbackData("🚪 Выйти") }
+                    new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData("✅ Фильтр ссылок"),
+                    },
+                    new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData("✍️ Текст"),
+                        InlineKeyboardButton.WithCallbackData("⏱️ Тайминг"),
+                    },
+                    new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData("📋 Отправители"),
+                        InlineKeyboardButton.WithCallbackData("📜 Модераторы")
+                    },
+                    new[] { InlineKeyboardButton.WithCallbackData("← Назад") }
                 });
             }
 
@@ -46,82 +68,93 @@ namespace NotLoveBot.AdministrationPanelController
             if (editMessage == null)
             {
                 administratorMenuPanel = await telegramBotClient.SendTextMessageAsync(message.Chat.Id,
-                "*Выберите одно из действий, которое хотите выполнить:*\n\n📩 *Пересылка* — управляйте пересылкой сообщений в канал — включайте и выключайте эту функцию по вашему усмотрению.\n\n✅ *Проверка* — настройте автоматическую проверку сообщений перед их пересылкой в канал — включайте или выключайте эту опцию.\n\n📋 *Список отправителей* — получите список отправителей сообщений за определенную дату.\n\n📜 *Список модераторов* — здесь вы можете управлять списком модераторов, добавлять или удалять их. _Доступно только для владельца._\n\n*Пожалуйста, нажмите на соответствующую кнопку ниже, чтобы продолжить.*",
+                $"⚙️ *Параметры @{botName}*\n\n ● Для ознакомления с функционалом этой панели посетите официальную документацию — [здесь](https://telegra.ph/CHto-takoe-Auto-Pitch-Bot-09-14).\n\n*⇩ Выберите одну из кнопок ниже, чтобы продолжить.*",
                 replyMarkup: adminInlineKeyboardMarkup, parseMode: ParseMode.Markdown);
             }
             else
             {
                 administratorMenuPanel = await telegramBotClient.EditMessageTextAsync(editMessage.Chat.Id, editMessage.MessageId,
-                "*Выберите одно из действий, которое хотите выполнить:*\n\n📩 *Пересылка* — управляйте пересылкой сообщений в канал — включайте и выключайте эту функцию по вашему усмотрению.\n\n✅ *Проверка* — настройте автоматическую проверку сообщений перед их пересылкой в канал — включайте или выключайте эту опцию.\n\n📋 *Список отправителей* — получите список отправителей сообщений за определенную дату.\n\n📜 *Список модераторов* — здесь вы можете управлять списком модераторов, добавлять или удалять их. _Доступно только для владельца._\n\n*Пожалуйста, нажмите на соответствующую кнопку ниже, чтобы продолжить.*",
+                $"⚙️ *Параметры @{botName}*\n\n ● Для ознакомления с функционалом этой панели посетите официальную документацию — [здесь](https://telegra.ph/CHto-takoe-Auto-Pitch-Bot-09-14).\n\n*⇩ Выберите одну из кнопок ниже, чтобы продолжить.*",
                 replyMarkup: adminInlineKeyboardMarkup, parseMode: ParseMode.Markdown);
             }
+
+            // Добавление в общий список сообщений с меню.
+            await _keyboardMessagesController.AddKeyboardMessages(administratorMenuPanel);
             
             EventHandler<CallbackQueryEventArgs> BotOnButtonClick = async (sender, callbackQueryEventArgs) =>
             {
+                try {     
                 var callbackQueryMessage = callbackQueryEventArgs.CallbackQuery;
 
                 // Удаляем всех других пользователей из обработчика другого пользователя.
                 if (callbackQueryMessage.From.Id != message.From.Id)
                     return;
 
-                // Класс для переключения функций (управление администратора).
-                SwitchingSystemStatus switchingSystemStatus = new SwitchingSystemStatus();
-                // Класс для выгрузки всех отправителей за конкретную дату.
-                UnloadList unloadList = new UnloadList();
-                // Класс для управления модераторами бота.
-                AdministratorsController administratorsController = new AdministratorsController();
+
+                CreatedBotController createdBotController = new CreatedBotController();
+                // Проверка на администратора.
+                if (await _setDataProcessing.ExistenceCheck($"Administrators_{botName}", "id", message.From.Id.ToString()) == false)
+                {
+                    await createdBotController.BotParameters(telegramBotClient, message, administratorMenuPanel);
+
+                    telegramBotClient.OnCallbackQuery -= _usersCallbacks[message.From.Id];
+                    _usersCallbacks.Remove(message.From.Id);
+                    return;
+                }
 
                 switch (callbackQueryMessage.Data)
                 {
-                    case "📩 Пересылка":
-                        await switchingSystemStatus.StatusController(telegramBotClient, callbackQueryMessage.Message, administratorMenuPanel, EnabledMessages, "Пересылка сообщений", administratorStatus);
-                        break;
-                    case "✅ Проверка":
-                        await switchingSystemStatus.StatusController(telegramBotClient, callbackQueryMessage.Message, administratorMenuPanel, EnabledCheckMessages, "Проверка сообщений", administratorStatus);
-                        break;
-                    case "📋 Список отправителей":
-                        if (administratorMenuPanel != null)
-                            await telegramBotClient.DeleteMessageAsync(administratorMenuPanel.Chat.Id, administratorMenuPanel.MessageId);
-                            
-                        await unloadList.UnloadListSenders(telegramBotClient, message, "📅 Укажите дату в формате *DD.MM.YYYY*, за которую вы хотите получить список всех отправителей сообщений, или воспользуйтесь командой /today, чтобы показать список за сегодня.", administratorStatus);
-                        break;
-                    case "📜 Список модераторов":
-                        await administratorsController.UnloadListAdministrators(telegramBotClient, message, administratorMenuPanel, administratorStatus);
-                        break;
-                    case "🚪 Выйти":
-                        // Удаления администратора из списка активных в панели.
-                        foreach (string administrator in NotLoveBot.Program.Program.ActiveAdministratorsId)
-                        {
-                            if (administrator == callbackQueryMessage.From.Id.ToString())
-                            {
-                                NotLoveBot.Program.Program.ActiveAdministratorsId.Remove(administrator);
-                                await telegramBotClient.SendTextMessageAsync(callbackQueryMessage.Message.Chat.Id, "🚪 *Вы успешно вышли из панели администратора.* Чтобы вернуться, введите команду /controller. 🔄", parseMode: ParseMode.Markdown);
+                    case "✅ Фильтр ссылок":
+                        var connectionBotModel = ConnectionController.TelegramBotClients.Values.FirstOrDefault(bot => bot.BotName == botName);
+                        bool enabledCheckMessages = Convert.ToBoolean(connectionBotModel.FilterStatus);
 
-                                // Удаление обработчика событий для отдельного пользователя.
-                                telegramBotClient.OnCallbackQuery -= usersCallbacks[message.From.Id];
-                                usersCallbacks.Remove(message.From.Id);
-                                break;
-                            }
+                        SwitchingSystemStatus switchingSystemStatus = new SwitchingSystemStatus();
+                        await switchingSystemStatus.StatusController(telegramBotClient, message, administratorMenuPanel, enabledCheckMessages, "Фильтр ссылок", administratorStatus, botName);
+                        break;
+                    case "✍️ Текст":
+                        MessageTextController messageTextController = new MessageTextController();
+                        await messageTextController.SetMessageText(telegramBotClient, message, administratorMenuPanel, administratorStatus, botName);
+                        break;
+                    case "⏱️ Тайминг":
+                        DelayController delayController = new DelayController();
+                        await delayController.SetDelay(telegramBotClient, message, administratorMenuPanel, administratorStatus, botName);
+                        break;
+                    case "📋 Отправители":
+                        if (administratorMenuPanel != null)
+                        {
+                            // Удаление панели администратора.
+                            await telegramBotClient.DeleteMessageAsync(administratorMenuPanel.Chat.Id, administratorMenuPanel.MessageId);
+
+                            UnloadList unloadList = new UnloadList();
+                            await unloadList.UnloadListSenders(telegramBotClient, message, "📅 Укажите дату в формате *DD.MM.YYYY*, за которую вы хотите получить список всех отправителей сообщений, или воспользуйтесь командой /today, чтобы показать список за сегодня.", administratorStatus, botName);
                         }
                         break;
+                    case "📜 Модераторы":
+                        AdministratorsController administratorsController = new AdministratorsController();
+                        await administratorsController.UnloadListAdministrators(telegramBotClient, message, administratorMenuPanel, administratorStatus, botName);
+                        break;
+                    case "← Назад":
+                        await createdBotController.BotParameters(telegramBotClient, message, administratorMenuPanel);
+                        break;
                 }
+
+                // Удаление обработчика из списка.
+                telegramBotClient.OnCallbackQuery -= _usersCallbacks[message.From.Id];
+                _usersCallbacks.Remove(message.From.Id);
+                } catch(Exception exception){ Console.WriteLine(exception); }
             };
 
             // Если обработчик с ID пользователя уже создан, то он удаляется.
-            if (usersCallbacks.ContainsKey(message.From.Id))
+            if (_usersCallbacks.ContainsKey(message.From.Id))
             {
-                telegramBotClient.OnCallbackQuery -= usersCallbacks[message.From.Id];
-                usersCallbacks[message.From.Id] = BotOnButtonClick;
+                telegramBotClient.OnCallbackQuery -= _usersCallbacks[message.From.Id];
+                _usersCallbacks[message.From.Id] = BotOnButtonClick;
             }
             else
-                usersCallbacks.Add(message.From.Id, BotOnButtonClick);
-
+                _usersCallbacks.Add(message.From.Id, BotOnButtonClick);
             telegramBotClient.OnCallbackQuery += BotOnButtonClick;
         }
-        catch(Exception exception)
-        {
-            Console.WriteLine(exception);
-        }
+        catch(Exception exception) { Console.WriteLine(exception); }
     }
     }
 }

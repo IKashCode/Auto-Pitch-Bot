@@ -10,43 +10,40 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using NotLoveBot.Models;
+using NotLoveBot.Interface;
+using System.Linq;
 
 namespace NotLoveBot.Program
 {
     public class Program
     {
-        // public static string ConnectionString = "";
-
-        // private static TelegramBotClient? _telegramBotClient;
-
-        // public static string Token = "6706511312:AAE1DBCvQXffYlqGBH0gdg9P9L0XWIIKsik";
-        // public static string Token = "7004921852:AAHVc1w1weO58bnNdYnYPFU4NQpYlIh0HuQ";
-
-        // public static long ChannelId = -1002057738592;
-        public static long ChannelId = -1002023006202;
-
-
-        // Класс - меню администратора.
-        private static AdministratorMenu _administratorMenu = new AdministratorMenu();
-
         // Класс для проверки сообщений.
         private static CheckMessage _checkMessage = new CheckMessage();
 
         // Класс для работы с базой данных.
         private static SetDataProcessing _dataProcessing = new SetDataProcessing();
-        private static GetDataProcessing _getDataProcessing = new GetDataProcessing();
-
-        // Список активных администраторов в паенеле.
-        public static List<string> ActiveAdministratorsId = new List<string>();
+        private static IGetDataProcessing<AdministrationModel> _getAdministratorsData = new GetAdministratorsData();
+        private static IGetDataProcessing<ConnectionBotModel> _getBotsData = new GetBotsData();
 
         // Список администраторов, которые ожидают добавления в базу данных.
         public static List<string> PendingAdditionAdministrators = new List<string>();
 
+        // Рекламная подпись внизу каждого сообщения.
+        public static string Ads = "_Бот создан с помощью — @AutoPitchBot_";
+
         public static async void BotOnMessageReceived(object sender, MessageEventArgs messageEventArgs, string token)
         {
-            try{
-                TelegramBotClient _telegramBotClient = new TelegramBotClient(token);
+            try {
+                TelegramBotClient telegramBotClient = new TelegramBotClient(token);
                 Message anyMessage = messageEventArgs.Message;
+
+                // Получение информации о bot из базы данных.
+                List<ConnectionBotModel> connectionBotModels = await _getBotsData.GetList(token, "token");
+                ConnectionBotModel connectionBotModel = connectionBotModels.FirstOrDefault();
+
+                // Получение username telegram bot.
+                string botName = connectionBotModel.BotName;
+                string channelId = connectionBotModel.ChannelId;
 
                 // Получение username и id.
                 string username = "username отсутсвует";
@@ -55,94 +52,66 @@ namespace NotLoveBot.Program
 
                 string id = anyMessage.From.Id.ToString();
 
+                string lastName = "LastName отсутсвует";
+                if (anyMessage.From.LastName != null)
+                    lastName = anyMessage.From.LastName.ToString();
+
                 Console.WriteLine($"🛜 @{username}, - | {anyMessage.Text} |");
 
                 // Проверка наличия администраторов в панели.
-                bool exists = ActiveAdministratorsId.Exists(item => item.Equals(id, StringComparison.OrdinalIgnoreCase));
+                bool exists = false;
+                if (AdministratorMenu.ActiveAdministratorsId.ContainsKey(botName))
+                {
+                    List<string> activeAdministratorsId = AdministratorMenu.ActiveAdministratorsId[botName];
+                    exists = activeAdministratorsId.Exists(item => item.Equals(id, StringComparison.OrdinalIgnoreCase));
+                }
 
                 // Если, код администратора не отправлен.
                 switch (anyMessage.Text)
                 {
                     case "/start":
-                        await _telegramBotClient.SendTextMessageAsync(anyMessage.Chat.Id,
-                        "👋 *Привет! Я бот, который отправляет сообщения в канал « В Аксае не любят… ».* Подпишитесь на канал [здесь](https://t.me/VAksuiNeLubat), чтобы отправлять текст, фото, видео, аудио, голосовые и видео сообщения. Бот доступен круглосуточно, 24/7.\n\n❓ *Для дополнительной информации используйте команду* /help",
+                        await telegramBotClient.SendTextMessageAsync(anyMessage.Chat.Id,
+                        $"{connectionBotModel.StartMessageText}\n\n{Ads}",
                         parseMode: ParseMode.Markdown);
                         return;
                         break;
-                    case "/controller":
-
-                        // Проверка на наличие администратора в списке ожидания подтверждения.
-                        if (PendingAdditionAdministrators.Count != 0)
-                        {
-                            foreach (string pendingAdditionAdministrator in PendingAdditionAdministrators)
-                            {
-                                if (pendingAdditionAdministrator == username)
-                                {
-                                    // Добавление в список администраторов.
-                                    await _dataProcessing.SetCreateRequest($"INSERT INTO Administrators_test_394832 (id, status, name) VALUES ('{id}', 'moderator', '{username}')");
-                                    PendingAdditionAdministrators.Remove(username);
-                                    break;
-                                }
-                            }
-                        }
-
-                        List<AdministrationModel> administrationModels = await _getDataProcessing.GetListAdministrators();
-
-                        bool passAdministratorPanel = false;
-                        string administratorStatus = "moderator";
-
-                        // Проверка на администратора.
-                        foreach (var administrationModel in administrationModels)
-                        {
-                            if (administrationModel.Id == id)
-                            {
-                                passAdministratorPanel = true;
-                                administratorStatus = administrationModel.Status;
-                                break;
-                            }
-                        }
-
-                        if (passAdministratorPanel == true)
-                        {
-                            // Добавление в список активных администраторов в панели.
-                            if (exists == false)
-                            {
-                                ActiveAdministratorsId.Add(id);
-                                await _telegramBotClient.SendTextMessageAsync(anyMessage.Chat.Id, $"🎉 *Добро пожаловать в панель администратора, {username}!*\n\n❓ Чтобы выйти и продолжить отправку сообщений в канал, пожалуйста, нажмите кнопку « *🚪 Выйти* ».", parseMode: ParseMode.Markdown);
-                            }
-
-                            await _administratorMenu.GetAdministratorMenu(_telegramBotClient, anyMessage, null, administratorStatus);
-                        }
-                        else
-                            await _telegramBotClient.SendTextMessageAsync(anyMessage.Chat.Id, $"❌ *У вас нет доступа к этой панели, так как вы не являетесь администратором.* Если вы администратор, свяжитесь с техподдержкой бота с помощью команды /help.", parseMode: ParseMode.Markdown);
-                        break;
-                    case "/help":
-                        await _telegramBotClient.SendTextMessageAsync(anyMessage.Chat.Id,
-                        $"💔 *Кого в Аксае не любят?*\n\n📢 *Обратите внимание:*\n● Чтобы публиковать сообщения, нужно быть подписанным на наш канал - « [В Аксае не любят…](https://t.me/VAksuiNeLubat) ». Если вы не подписаны, отправка сообщений будет недоступна. Отправка сообщений полностью анонимна, и данные об отправителях не распространяются.\n\n📸 *Что публикует бот:*\n● Текст, фото, видео, аудио, голосовые и видео сообщения. Все сообщения публикуются моментально, а бот работает круглосуточно, 24/7.\n\n🎉 *Особенности канала:*\n● Канал посвящен развлекательному контенту без серьезных тематик. В данный канал вы можете отправлять тех, кого не любите в Аксае. Автор канала не несет ответственности за опубликованный контент.\n\n📬 *Контакты:*\n● Обратная связь: @admAksNotLove\n● Почта для связи с разработчиком: vanl.not.love.bot@outlook.com",
-                        parseMode: ParseMode.Markdown);
-                        break;
                     default:
-                        if (NotLoveBot.AdministrationPanelController.AdministratorMenu.EnabledMessages == false || exists == true)
+                        if (exists == true)
                             return;
 
                         Message forwardedMessages = messageEventArgs.Message;
                         string messageText = "текст отсутсвует";
 
                         // Проверка подписки на канал.
-                        if (await CheckUserSubscription(forwardedMessages.From.Id, _telegramBotClient) == false)
+                        if (await CheckUserSubscription(forwardedMessages.From.Id, telegramBotClient, channelId) == false)
                         {
-                            await _telegramBotClient.SendTextMessageAsync(forwardedMessages.Chat.Id,
-                            "❗️ *Для использования этой функции подпишитесь на наш канал «* [В Аксае не любят...](https://t.me/VAksuiNeLubat) *»!* 🚀 После подписки вы сможете отправлять сообщения через бота. Спасибо!",
-                            parseMode: ParseMode.Markdown);
+                            Chat channel = await telegramBotClient.GetChatAsync(channelId);
+                            string channelName = channel.Username;
+                            if (channelName != null)
+                            {
+                                InlineKeyboardMarkup channelInlineKeyboardMarkup = new InlineKeyboardMarkup(new[] {
+                                    new[] { InlineKeyboardButton.WithUrl("Подписаться →", $"https://t.me/{channelName}") },
+                                });
+                            
+                                await telegramBotClient.SendTextMessageAsync(forwardedMessages.Chat.Id,
+                                "⚠️ Для использования функции пересылки сообщений в канал или группу требуется, *чтобы вы были на него подписаны!*",
+                                replyMarkup: channelInlineKeyboardMarkup, parseMode: ParseMode.Markdown);
+                            }
+                            else
+                                await telegramBotClient.SendTextMessageAsync(forwardedMessages.Chat.Id, "⚠️ Для использования функции пересылки сообщений в канал или группу требуется, *чтобы вы были на него подписаны!*", parseMode: ParseMode.Markdown);
 
                             return;
                         }
+
+                        // Получение статуса проверки на ссылки из списка.
+                        var botModel = ConnectionController.TelegramBotClients.Values.FirstOrDefault(bot => bot.Token == token);
+                        bool enabledCheckMessages = Convert.ToBoolean(botModel.FilterStatus);
 
                         string messageType = "❌ неверный тип файла";
                         string textMessageStatus = "✅";
 
                         // Ответное сообщение на отправку, которое определяется проверкой.
-                        string? checkMessageText = "✨📸 *Спасибо за ваше медиа-сообщение!* ⏳ Оно будет отправлено в канал через `30 секунд`. 💬 Не переживайте, все полностью анонимно!";
+                        string? checkMessageText = connectionBotModel.ReplyMessageText;
 
                         // Определение типа сообщения.
                         switch (messageEventArgs.Message.Type)
@@ -151,57 +120,54 @@ namespace NotLoveBot.Program
                                 messageType = "📝 текстовое-сообщение";
 
                                 // Проверка сообщение и ответ.
-                                checkMessageText = await _checkMessage.CheckForbiddenSymbols(forwardedMessages.Text, NotLoveBot.AdministrationPanelController.AdministratorMenu.EnabledCheckMessages);
+                                checkMessageText = await _checkMessage.CheckLink(checkMessageText, forwardedMessages.Text, enabledCheckMessages);
                                 messageText = forwardedMessages.Text.ToString();
 
-                                await _telegramBotClient.SendTextMessageAsync(anyMessage.Chat.Id, checkMessageText, parseMode: ParseMode.Markdown);
-                                await Task.Delay(TimeSpan.FromSeconds(30));
+                                await telegramBotClient.SendTextMessageAsync(anyMessage.Chat.Id, checkMessageText, parseMode: ParseMode.Markdown);
+                                await Task.Delay(TimeSpan.FromSeconds((double)botModel.Delay));
+                                Console.WriteLine((double)botModel.Delay);
 
                                 if (!checkMessageText.Contains("🚫"))
-                                    await _telegramBotClient.SendTextMessageAsync(ChannelId, forwardedMessages.Text, parseMode: ParseMode.Markdown);
+                                    await telegramBotClient.SendTextMessageAsync(channelId, forwardedMessages.Text, parseMode: ParseMode.Markdown);
                                 else
                                     textMessageStatus = "🚫";
 
                                 Console.WriteLine($"{forwardedMessages.From.Username} : {forwardedMessages.Text}");
                                 break;
-                            case MessageType.Photo:
-                                await _telegramBotClient.SendTextMessageAsync(anyMessage.Chat.Id, checkMessageText, parseMode: ParseMode.Markdown);
-                                await Task.Delay(TimeSpan.FromSeconds(30));
-
-                                await _telegramBotClient.SendPhotoAsync(ChannelId, forwardedMessages.Photo.LastOrDefault().FileId);
-                                messageType = "📷 фото-файл";
-                                break;
-                            case MessageType.Video:
-                                await _telegramBotClient.SendTextMessageAsync(anyMessage.Chat.Id, checkMessageText, parseMode: ParseMode.Markdown);
-                                await Task.Delay(TimeSpan.FromSeconds(30));
-
-                                await _telegramBotClient.SendVideoAsync(ChannelId, forwardedMessages.Video.FileId);
-                                messageType = "🎥 видео-файл";
-                                break;
-                            case MessageType.Audio:
-                                await _telegramBotClient.SendTextMessageAsync(anyMessage.Chat.Id, checkMessageText, parseMode: ParseMode.Markdown);
-                                await Task.Delay(TimeSpan.FromSeconds(30));
-
-                                await _telegramBotClient.SendAudioAsync(ChannelId, forwardedMessages.Audio.FileId);
-                                messageType = "🎵 аудио-файл";
-                                break;
-                            case MessageType.Voice:
-                                await _telegramBotClient.SendTextMessageAsync(anyMessage.Chat.Id, checkMessageText, parseMode: ParseMode.Markdown);
-                                await Task.Delay(TimeSpan.FromSeconds(30));
-
-                                await _telegramBotClient.SendVoiceAsync(ChannelId, forwardedMessages.Voice.FileId);
-                                messageType = "🎤 голосовое-сообщение";
-                                break;
-                            case MessageType.VideoNote:
-                                await _telegramBotClient.SendTextMessageAsync(anyMessage.Chat.Id, checkMessageText, parseMode: ParseMode.Markdown);
-                                await Task.Delay(TimeSpan.FromSeconds(30));
-
-                                await _telegramBotClient.SendVideoNoteAsync(ChannelId, forwardedMessages.VideoNote.FileId);
-                                messageType = "📀 видео-сообщение";
-                                break;
                             default:
-                                checkMessageText = "⚠️ *Извините, но этот формат сообщения не поддерживается. Пожалуйста, отправьте текст, фото, видео, аудио, голосовое или видео сообщение!*";
-                                await _telegramBotClient.SendTextMessageAsync(anyMessage.Chat.Id, checkMessageText, parseMode: ParseMode.Markdown);
+                                MessageType[] messageTypes = { MessageType.Photo, MessageType.Video, MessageType.VideoNote, MessageType.Voice, MessageType.Audio };
+                                bool rightType = false;
+                                foreach (var type in messageTypes)
+                                {
+                                    if (messageEventArgs.Message.Type == type)
+                                    {
+                                        rightType = true;
+                                        break;
+                                    }
+                                }
+                                if (rightType == false)
+                                {
+                                    await telegramBotClient.SendTextMessageAsync(messageEventArgs.Message.Chat.Id,
+                                    "⚠️ *Извините, но этот формат сообщения не поддерживается. Пожалуйста, отправьте текст, фото, видео, аудио, голосовое или видео сообщение!*",
+                                    parseMode: ParseMode.Markdown);
+                                    return;
+                                }
+
+                                if (!string.IsNullOrEmpty(messageEventArgs.Message.Caption))
+                                {
+                                    messageText = messageEventArgs.Message.Caption.ToString();
+                                    checkMessageText = await _checkMessage.CheckLink(checkMessageText, messageEventArgs.Message.Caption, enabledCheckMessages);
+                                }
+                                else
+                                    checkMessageText = $"{checkMessageText}\n\n{NotLoveBot.Program.Program.Ads}";
+
+                                await telegramBotClient.SendTextMessageAsync(anyMessage.Chat.Id, checkMessageText, parseMode: ParseMode.Markdown);
+                                await Task.Delay(TimeSpan.FromSeconds((double)botModel.Delay));
+
+                                if (!checkMessageText.Contains("🚫"))
+                                    messageType = await SendMediaMessage(telegramBotClient, anyMessage, channelId);
+                                else
+                                    textMessageStatus = "🚫";
                                 break;
                         }
 
@@ -211,25 +177,61 @@ namespace NotLoveBot.Program
                             consoleMessageOutput = forwardedMessages.Text;
 
                         // Получения даты отправки сообщения.
-                        DateTime currentDate = DateTime.Today;
-                        string currentDateText = currentDate.ToString("dd.MM.yyyy");
+                        string currentDateText = DateTime.Today.ToString("dd.MM.yyyy");
+                        string currentTimeText = DateTime.Now.ToString("HH:mm");
 
                         Console.WriteLine($"{textMessageStatus} @{username} (ID: {id}), Type: {messageType}, - | {consoleMessageOutput} |");
 
                         // Внесение в сообщения в базу данных.
-                        string sqliteRequest = $"INSERT INTO UserMessageHistory_test_394832 (user, id, message, date, type, status) VALUES ('{username}', '{id}', '{messageText}', '{currentDateText}', '{messageType}', '{textMessageStatus}');";
-                        await _dataProcessing.SetCreateRequest(sqliteRequest);
+                        string sqliteRequest = $"INSERT INTO UserMessageHistory_{botName} (user, id, message, date, type, status, firstName, lastName, time) VALUES (@username, @id, @message, @date, @type, @status, @firstName, @lastName, @time);";
+                        string[,] userMessageHistoryData = {
+                            { username, id, messageText, currentDateText, messageType, textMessageStatus, anyMessage.From.FirstName.ToString(), lastName, currentTimeText },
+                            { "username", "id", "message", "date", "type", "status", "firstName", "lastName", "time" } 
+                        };
+
+                        await _dataProcessing.SetCreateRequest(sqliteRequest, userMessageHistoryData, null);
                         break;
                 }
             } catch(Exception exception){Console.WriteLine(exception); }
         }
 
+        private static async Task<string> SendMediaMessage(TelegramBotClient telegramBotClient, Message message, string channelId)
+        {
+            string? messageType = null;
+
+            switch (message.Type)
+            {
+                case MessageType.Photo:
+                    await telegramBotClient.SendPhotoAsync(channelId, message.Photo.LastOrDefault().FileId, caption: message.Caption);
+                    messageType = "📷 фото-файл";
+                    break;
+                case MessageType.Video:
+                    await telegramBotClient.SendVideoAsync(channelId, message.Video.FileId, caption: message.Caption);
+                    messageType = "🎥 видео-файл";
+                    break;
+                case MessageType.Audio:
+                    await telegramBotClient.SendAudioAsync(channelId, message.Audio.FileId, caption: message.Caption);
+                    messageType = "🎵 аудио-файл";
+                    break;
+                case MessageType.Voice:
+                    await telegramBotClient.SendVoiceAsync(channelId, message.Voice.FileId, caption: message.Caption);
+                    messageType = "🎤 голосовое-сообщение";
+                    break;
+                case MessageType.VideoNote:
+                    await telegramBotClient.SendVideoNoteAsync(channelId, message.VideoNote.FileId);
+                    messageType = "📀 видео-сообщение";
+                    break;
+            }
+
+            return messageType;
+        }
+
         // Метод, который проверяет подписку на канал.
-        private static async Task<bool> CheckUserSubscription(long userId, TelegramBotClient telegramBotClient)
+        private static async Task<bool> CheckUserSubscription(long userId, TelegramBotClient telegramBotClient, string channelId)
         {
             try
             {
-                var chatMember = await telegramBotClient.GetChatMemberAsync(ChannelId, userId);
+                var chatMember = await telegramBotClient.GetChatMemberAsync(channelId, userId);
 
                 return
                 chatMember.Status == ChatMemberStatus.Member ||

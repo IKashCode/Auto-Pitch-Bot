@@ -3,77 +3,112 @@ using Telegram.Bot;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
-using NotLoveBot.AdministrationPanelController;
 using Telegram.Bot.Types.Enums;
+using NotLoveBot.DataBaseProcess;
+using NotLoveBot.Program;
+using NotLoveBot.Models;
 
 namespace NotLoveBot.AdministrationPanelController
 {
     public class SwitchingSystemStatus
     {
-        private AdministratorMenu _administratorMenu = new AdministratorMenu();
+        // Класс для работы с базой данных.
+        private SetDataProcessing _setDataProcessing = new SetDataProcessing();
 
-        public async Task StatusController(TelegramBotClient telegramBotClient, Message message, Message editMessage, bool statusSystem, string functionName, string administratorStatus)
+        private static Dictionary<long, EventHandler<CallbackQueryEventArgs>> _usersCallbacks = new Dictionary<long, EventHandler<CallbackQueryEventArgs>>();
+
+        public async Task StatusController(TelegramBotClient telegramBotClient, Message message, Message editMessage, bool statusSystem, string functionName, string administratorStatus, string botName)
         {
             try {
             // Создание панели переключения и ее текста.
             string actionName = "⏹️ Выключить",
-            statusText = "в данный момент *включена*. Вы можете выключить её, используя кнопки ниже.",
-            resultMessage = $"❌ *{functionName} выключена!*";
+            statusText = "в данный момент *включен*. Вы можете выключить его, используя кнопки ниже.",
+            resultMessage = $"❌ *{functionName} выключен!*";
 
             if (statusSystem == false)
             {
                 actionName = "▶️ Включить";
-                statusText = "в данный момент *выключена*. Вы можете включить её, используя кнопки ниже.";
+                statusText = "в данный момент *выключен*. Вы можете включить его, используя кнопки ниже.";
             }
 
             InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup(new[] {
                 InlineKeyboardButton.WithCallbackData(actionName),
-                InlineKeyboardButton.WithCallbackData("⬅️ Назад")
+                InlineKeyboardButton.WithCallbackData("← Назад")
             });
 
-            Message statusControllerPanel = await telegramBotClient.EditMessageTextAsync(editMessage.Chat.Id, editMessage.MessageId, $"⬇️ *{functionName}* {statusText}", replyMarkup: inlineKeyboardMarkup, parseMode: ParseMode.Markdown);
+            Message statusControllerPanel = await telegramBotClient.EditMessageTextAsync(editMessage.Chat.Id, editMessage.MessageId, $"⇩ *{functionName}* {statusText}", replyMarkup: inlineKeyboardMarkup, parseMode: ParseMode.Markdown);
 
-            telegramBotClient.OnCallbackQuery += BotOnButtonClick;
-
-            async void BotOnButtonClick(object sender, CallbackQueryEventArgs callbackQueryEventArgs)
+            EventHandler<CallbackQueryEventArgs> BotOnButtonClick = async (sender, callbackQueryEventArgs) =>
             {
                 var callbackQueryMessage = callbackQueryEventArgs.CallbackQuery;
                 var telegramBotClient = (TelegramBotClient)sender;
+                
+                if (callbackQueryMessage.From.Id != message.From.Id)
+                    return;
 
+                AdministratorMenu administratorMenu = new AdministratorMenu();
                 // Измненение статуса параметра.
                 if (callbackQueryMessage.Data == "⏹️ Выключить" || callbackQueryMessage.Data == "▶️ Включить")
                 {
                     statusSystem = !statusSystem;
 
                     if (statusSystem == true)
-                        resultMessage = $"✅ *{functionName} включена!*";
+                        resultMessage = $"✅ *{functionName} включен!*";
 
                     // Сообщение о статусе функционала после переключения.
                     statusControllerPanel = await telegramBotClient.EditMessageTextAsync(statusControllerPanel.Chat.Id, statusControllerPanel.MessageId, resultMessage, parseMode: ParseMode.Markdown);
-                    await Task.Delay(2000);
+                    await Task.Delay(1000);
 
-                    await _administratorMenu.GetAdministratorMenu(telegramBotClient, message, statusControllerPanel, administratorStatus);
+                    await administratorMenu.GetAdministratorMenu(telegramBotClient, message, statusControllerPanel, administratorStatus, botName);
 
-                    // Приравнивания статуса переменной, имя которой указано в переменной "functionalName" (для исправления бага).
-                    switch (functionName)
+                    // Создаем массив для записи в базу данных.
+                    int statusSystemIntValue = statusSystem ? 1 : 0;
+                    object[,] data = { { statusSystemIntValue, botName }, { "status", "botName" } };
+                    // Запись в базу данных и смена значения.
+                    await _setDataProcessing.SetCreateRequest("UPDATE Bots SET FilterStatus = @status WHERE botName = @botName;", data, null);
+
+                    // Обновляем значение в списке.
+                    var connectionBotModel = ConnectionController.TelegramBotClients.Values.FirstOrDefault(bot => bot.BotName == botName);
+                    var updateConnectionBotModel = new ConnectionBotModel
                     {
-                        case "Пересылка сообщений":
-                            NotLoveBot.AdministrationPanelController.AdministratorMenu.EnabledMessages = statusSystem;
-                            break;
-                        case "Проверка сообщений":
-                            NotLoveBot.AdministrationPanelController.AdministratorMenu.EnabledCheckMessages = statusSystem;
-                            break;
-                        default:
-                            Console.WriteLine("Error: You must specify the name of the controlled functionality!");
-                            break;
-                    }
+                        BotName = connectionBotModel.BotName,
+                        Token = connectionBotModel.Token,
+                        ChannelName = connectionBotModel.ChannelName,
+                        ChannelId = connectionBotModel.ChannelId,
+                        UserId = connectionBotModel.UserId,
+                        BotClient = connectionBotModel.BotClient,
+                        Delay = connectionBotModel.Delay,
+                        ReplyMessageText = connectionBotModel.ReplyMessageText,
+                        StartMessageText = connectionBotModel.StartMessageText,
+                        FilterStatus = statusSystemIntValue,
+                    };
+
+                    // Удаляем прошлое значение и присваиваем новое.
+                    ConnectionController.TelegramBotClients.TryRemove(connectionBotModel.Token, out _);
+                    ConnectionController.TelegramBotClients.TryAdd(updateConnectionBotModel.Token, updateConnectionBotModel);
+
+                    telegramBotClient.OnCallbackQuery -= _usersCallbacks[message.From.Id];
                 }
                 else
-                    await _administratorMenu.GetAdministratorMenu(telegramBotClient, message, statusControllerPanel, administratorStatus);
+                {
+                    await administratorMenu.GetAdministratorMenu(telegramBotClient, message, statusControllerPanel, administratorStatus, botName);
+                    telegramBotClient.OnCallbackQuery -= _usersCallbacks[message.From.Id];
+                    _usersCallbacks.Remove(message.From.Id);
+                }
+            };
 
-                telegramBotClient.OnCallbackQuery -= BotOnButtonClick;
+            // Если обработчик с ID пользователя уже создан, то он удаляется.
+            if (_usersCallbacks.ContainsKey(message.From.Id))
+            {
+                telegramBotClient.OnCallbackQuery -= _usersCallbacks[message.From.Id];
+                _usersCallbacks[message.From.Id] = BotOnButtonClick;
             }
-            }catch(Exception){}
+            else
+                _usersCallbacks.Add(message.From.Id, BotOnButtonClick);
+
+            telegramBotClient.OnCallbackQuery += BotOnButtonClick;
+            }
+            catch(Exception exception) { Console.WriteLine(exception); }
         }
     }
 }

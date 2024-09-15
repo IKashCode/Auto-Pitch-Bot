@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "63DfD5IAgxrm6GpyLo1tqSo0sarOxe1Gr10PvbJ7XSmDqOUb8WuAZ3pMYpzyC3a1hvQpgHZG8M5yZ2m4v6BWpQ==",
+  "dgSpecHash": "vCraAzfG3isLxs6TV2gxDpG+cLDEVDztcFSwxY3W2EzW254B19mnL9iFpUtlmlZn5YbN37xH6kDUOO30O7sDZw==",
   "success": true,
   "projectFilePath": "C:\\Users\\yangc\\OneDrive\\Документы\\NotLoveBot\\NotLoveBot.csproj",
   "expectedPackageFiles": [
@@ -87,11 +87,7 @@
     "C:\\Users\\yangc\\.nuget\\packages\\system.threading.timer\\4.3.0\\system.threading.timer.4.3.0.nupkg.sha512",
     "C:\\Users\\yangc\\.nuget\\packages\\system.xml.readerwriter\\4.3.0\\system.xml.readerwriter.4.3.0.nupkg.sha512",
     "C:\\Users\\yangc\\.nuget\\packages\\system.xml.xdocument\\4.3.0\\system.xml.xdocument.4.3.0.nupkg.sha512",
-    "C:\\Users\\yangc\\.nuget\\packages\\telegram.bot\\16.0.2\\telegram.bot.16.0.2.nupkg.sha512",
-    "C:\\Users\\yangc\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\6.0.29\\microsoft.aspnetcore.app.ref.6.0.29.nupkg.sha512",
-    "C:\\Users\\yangc\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\6.0.29\\microsoft.netcore.app.host.win-x64.6.0.29.nupkg.sha512",
-    "C:\\Users\\yangc\\.nuget\\packages\\microsoft.netcore.app.ref\\6.0.29\\microsoft.netcore.app.ref.6.0.29.nupkg.sha512",
-    "C:\\Users\\yangc\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\6.0.29\\microsoft.windowsdesktop.app.ref.6.0.29.nupkg.sha512"
+    "C:\\Users\\yangc\\.nuget\\packages\\telegram.bot\\16.0.2\\telegram.bot.16.0.2.nupkg.sha512"
   ],
   "logs": []
 }

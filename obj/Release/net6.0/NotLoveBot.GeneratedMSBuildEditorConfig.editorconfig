@@ -8,4 +8,6 @@ build_property.PlatformNeutralAssembly =
 build_property.EnforceExtendedAnalyzerRules = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = NotLoveBot
-build_property.ProjectDir = C:\Users\79381\Desktop\NotLoveBot\
+build_property.ProjectDir = C:\Users\yangc\OneDrive\Документы\NotLoveBot\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 

@@ -1,7 +1,7 @@
 {
   "version": 3,
   "targets": {
-    "net6.0": {
+    "net8.0": {
       "Microsoft.Data.Sqlite/8.0.3": {
         "type": "package",
         "dependencies": {
@@ -21,12 +21,12 @@
           "SQLitePCLRaw.core": "2.1.6"
         },
         "compile": {
-          "lib/net6.0/Microsoft.Data.Sqlite.dll": {
+          "lib/net8.0/Microsoft.Data.Sqlite.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/net6.0/Microsoft.Data.Sqlite.dll": {
+          "lib/net8.0/Microsoft.Data.Sqlite.dll": {
             "related": ".xml"
           }
         }
@@ -329,10 +329,10 @@
           "lib/netstandard2.0/_._": {}
         },
         "build": {
-          "buildTransitive/net6.0/SQLitePCLRaw.lib.e_sqlite3.targets": {}
+          "buildTransitive/net8.0/SQLitePCLRaw.lib.e_sqlite3.targets": {}
         },
         "runtimeTargets": {
-          "runtimes/browser-wasm/nativeassets/net6.0/e_sqlite3.a": {
+          "runtimes/browser-wasm/nativeassets/net8.0/e_sqlite3.a": {
             "assetType": "native",
             "rid": "browser-wasm"
           },
@@ -5131,7 +5131,7 @@
     }
   },
   "projectFileDependencyGroups": {
-    "net6.0": [
+    "net8.0": [
       "Microsoft.Data.Sqlite >= 8.0.3",
       "Telegram.Bot >= 16.0.2"
     ]
@@ -5152,14 +5152,14 @@
         "C:\\Users\\yangc\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
-        "net6.0"
+        "net8.0"
       ],
       "sources": {
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
-        "net6.0": {
-          "targetAlias": "net6.0",
+        "net8.0": {
+          "targetAlias": "net8.0",
           "projectReferences": {}
         }
       },
@@ -5175,8 +5175,8 @@
       }
     },
     "frameworks": {
-      "net6.0": {
-        "targetAlias": "net6.0",
+      "net8.0": {
+        "targetAlias": "net8.0",
         "dependencies": {
           "Microsoft.Data.Sqlite": {
             "target": "Package",
@@ -5198,30 +5198,12 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
-        "downloadDependencies": [
-          {
-            "name": "Microsoft.AspNetCore.App.Ref",
-            "version": "[6.0.29, 6.0.29]"
-          },
-          {
-            "name": "Microsoft.NETCore.App.Host.win-x64",
-            "version": "[6.0.29, 6.0.29]"
-          },
-          {
-            "name": "Microsoft.NETCore.App.Ref",
-            "version": "[6.0.29, 6.0.29]"
-          },
-          {
-            "name": "Microsoft.WindowsDesktop.App.Ref",
-            "version": "[6.0.29, 6.0.29]"
-          }
-        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

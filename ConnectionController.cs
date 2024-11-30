@@ -18,8 +18,7 @@ namespace NotLoveBot.Program
     public class ConnectionController
     {
         public static TelegramBotClient? _telegramBotClient;
-        // public static string Token = "7098079115:AAHyxAsO9XthZA79Gu4EY9I7WsJwsbnw3_k";
-        public static string Token = "6820716903:AAEo7r-nGOLSJfNQfVZ-MMNERSvzEiq9a60";
+        public static string Token = "[YOUR TOKEN]";
         
         public static ConcurrentDictionary<string, ConnectionBotModel> TelegramBotClients = new ConcurrentDictionary<string, ConnectionBotModel>();
 

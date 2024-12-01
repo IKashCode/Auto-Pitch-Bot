@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\yangc\\OneDrive\\Документы\\AutoPitchBot\\NotLoveBot.csproj": {}
+    "C:\\Users\\yangc\\AutoPitchBot\\NotLoveBot.csproj": {}
   },
   "projects": {
-    "C:\\Users\\yangc\\OneDrive\\Документы\\AutoPitchBot\\NotLoveBot.csproj": {
+    "C:\\Users\\yangc\\AutoPitchBot\\NotLoveBot.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\yangc\\OneDrive\\Документы\\AutoPitchBot\\NotLoveBot.csproj",
+        "projectUniqueName": "C:\\Users\\yangc\\AutoPitchBot\\NotLoveBot.csproj",
         "projectName": "NotLoveBot",
-        "projectPath": "C:\\Users\\yangc\\OneDrive\\Документы\\AutoPitchBot\\NotLoveBot.csproj",
+        "projectPath": "C:\\Users\\yangc\\AutoPitchBot\\NotLoveBot.csproj",
         "packagesPath": "C:\\Users\\yangc\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\yangc\\OneDrive\\Документы\\AutoPitchBot\\obj\\",
+        "outputPath": "C:\\Users\\yangc\\AutoPitchBot\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\yangc\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -71,12 +71,31 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Runtime.linux-x64",
+              "version": "[8.0.4, 8.0.4]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.linux-x64",
+              "version": "[8.0.4, 8.0.4]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Runtime.linux-x64",
+              "version": "[8.0.4, 8.0.4]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
           "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204/PortableRuntimeIdentifierGraph.json"
+        }
+      },
+      "runtimes": {
+        "linux-x64": {
+          "#import": []
         }
       }
     }

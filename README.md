@@ -8,6 +8,6 @@
 
 1. Скачайте [последнюю версию Auto Pitch Bot со страницы «Релизы»](https://github.com/IKashCode/AutoPitchBot/releases).
 2. Отредактируйте файл «**botsettings.json**», изменив «**YOUR TOKEN**» на токен вашего бота.
-3. Запустите файл «**NotLoveBot.exe**» и бот начнет работать.
+3. Запустите файл «**NotLoveBot.exe**» или, в случае ОС linux, запустить сборку в консоли (./NotLoveBot) и бот начнет работать.
 
 **Более подробно ознакомиться с Auto Pitch Bot вы сможете в официальном [wiki](https://github.com/IKashCode/AutoPitchBot/wiki)**

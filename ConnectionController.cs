@@ -12,13 +12,16 @@ using Telegram.Bot.Args;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using Microsoft.Extensions.Configuration;
+using System.Runtime.InteropServices;
+using System.IO;
 
 namespace NotLoveBot.Program
 {
     public class ConnectionController
     {
         public static TelegramBotClient? _telegramBotClient;
-        public static string Token = "[YOUR TOKEN]";
+        public static string? Token;
         
         public static ConcurrentDictionary<string, ConnectionBotModel> TelegramBotClients = new ConcurrentDictionary<string, ConnectionBotModel>();
 
@@ -50,6 +53,14 @@ namespace NotLoveBot.Program
                 connectionBotModel.BotClient.OnMessageEdited  += (sender, messageEventArgs) => NotLoveBot.Program.Program.BotOnMessageReceived(sender, messageEventArgs, connectionBotModel.Token);
                 connectionBotModel.BotClient.StartReceiving();
             }
+
+            // Получения токена основного бота из botsettings.json.
+            var builder = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("botsettings.json", optional: false, reloadOnChange: true);
+
+            IConfiguration configuration = builder.Build();
+            Token = configuration["BotToken"];
 
             _telegramBotClient = new TelegramBotClient(Token);
             

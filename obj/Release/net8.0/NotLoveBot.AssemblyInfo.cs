@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("NotLoveBot")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+52c288314eaf2726a43cfe508f38e7e3806c603e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f75b4f64e5f0478d057ff189dccdd666dd82a403")]
 [assembly: System.Reflection.AssemblyProductAttribute("NotLoveBot")]
 [assembly: System.Reflection.AssemblyTitleAttribute("NotLoveBot")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
